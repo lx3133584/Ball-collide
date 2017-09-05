@@ -1,24 +1,12 @@
 (function () {
-  // 获取设备的 pixel ratio  (polyfill 提供了这个方法)
-  var getPixelRatio = function (context) {
-    var backingStore = context.backingStorePixelRatio ||
-      context.webkitBackingStorePixelRatio ||
-      context.mozBackingStorePixelRatio ||
-      context.msBackingStorePixelRatio ||
-      context.oBackingStorePixelRatio ||
-      context.backingStorePixelRatio || 1;
-
-    return (window.devicePixelRatio || 1) / backingStore;
-  };
   // 初始化canvas
   var initCanvas = function () {
     var canvas = document.getElementById('game');
-    canvas.width = window.innerWidth
-    canvas.height = window.innerHeight
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
     var context = canvas.getContext('2d');
-    context.ratio = getPixelRatio(context);
-    context.width = canvas.width;
-    context.height = canvas.height;
+    context.width = window.innerWidth;
+    context.height = window.innerHeight;
     return context
   }
   // 小球链子的构造函数
@@ -96,6 +84,7 @@
     document.body.addEventListener('mousedown', function (e) {
       var result = that._isClickSelf(e)
       if (result.is) {
+        console.log('click ball')
         mouseDownFlag = true
         offset = result.offset
       }
@@ -113,18 +102,24 @@
   // 绘制小球
   Ball.prototype.draw = function () {
     this.context.clearRect(0, 0, this.context.width, this.context.height);
-    this.context.drawImage(this.image, this.x, this.y, this.radius * this.context.ratio * 2, this.radius * this.context.ratio * 2);
+    this.context.drawImage(this.image, this.x, this.y, this.radius * 2, this.radius * 2);
   }
   // 主函数
   var main = function () {
     var context = initCanvas()
     var ball = new Ball(context)
-    var chain = new Chain(context)
-    window.requestAnimationFrame(function step() {
+    // var chain = new Chain(context)
+    // 开始动画
+    animationId = window.requestAnimationFrame(function step() {
       ball.draw();
       requestAnimationFrame(step);
     })
-
   }
-  main()
+  window.onload = main
+  // 调整窗口大小
+  var animationId
+  window.addEventListener('resize', function () {
+    window.cancelAnimationFrame(animationId);
+    main()
+  })
 })()
