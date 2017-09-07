@@ -121,8 +121,10 @@
     })
     document.body.addEventListener('mousemove', function (e) {
       if (mouseDownFlag) {
-        _this.x = e.clientX - offset.x;
-        _this.y = e.clientY - offset.y;
+        var moveX = e.clientX - offset.x;
+        var moveY = e.clientY - offset.y;
+        if (moveX > 0 && moveX < _this.context.width - _this.radius * 2) _this.x = moveX;
+        if (moveY > 0 && moveY < _this.context.height - _this.radius * 2) _this.y = moveY;
       }
     })
     document.body.addEventListener('mouseup', function (e) {
@@ -187,6 +189,7 @@
             }, 1000/50)
             _this._impactFlag = true
           }
+          return true
         } else {
           obj.obj.impact()
           this._removeImpactObj(obj)
