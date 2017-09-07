@@ -18,8 +18,8 @@
     this.objX = 200;
     this.objY = 200;
     this.frequency = 6;
-    this.initRadius = 10;
-    this.radius = 5;
+    this.initRadius = 6;
+    this.radius = 4;
     this.life = true
     this._init(ball);
   }
@@ -56,16 +56,15 @@
   var Ball = function (context) {
     this.context = context
     this.image = new Image();
-    this.radius = 50;
+    this.radius = 30;
     this.initX = this.context.width / 2 - this.radius;
     this.initY = this.context.height / 2 - this.radius;
     this.x = 0;
     this.y = 0;
     this.chain = null;
-    this.speed = 0;
+    this.speedX = 0;
+    this.speedY = 0;
     this.runFlag = false;
-    this.offsetX = 0;
-    this.offsetY = 0;
     this.impactObj = [];
     this._init();
   }
@@ -128,11 +127,13 @@
     })
     document.body.addEventListener('mouseup', function (e) {
       mouseDownFlag = false;
-      var distance = _this._computedDistance(e.clientX, e.clientY, _this.chain.x, _this.chain.y);
+      var center = _this._computedCenter();
+      var distance = _this._computedDistance(center.x, center.y, _this.chain.x, _this.chain.y);
       if (distance) {
-        _this.offsetX = _this.chain.x - e.clientX
-        _this.offsetY = _this.chain.y - e.clientY
-        _this.speed = distance / 5;
+        var offsetX = _this.chain.x - center.x
+        var offsetY = _this.chain.y - center.y
+        _this.speedX = offsetX / 8;
+        _this.speedY = offsetY / 8;
         _this.switchRun(true);
         _this._addImpactObj(_this.chain, false)
       }
@@ -147,11 +148,11 @@
   }
   // 小球运动
   Ball.prototype._run = function () {
-    var offsetSum = (Math.abs(this.offsetX) + Math.abs(this.offsetY))
-    this.x += this.speed * this.offsetX / offsetSum;
-    this.y += this.speed * this.offsetY / offsetSum;
-    this.speed = this.speed - this.speed / 100;
     this._impactCheckingList()
+    this.x += this.speedX;
+    this.y += this.speedY;
+    this.speedX = this.speedX - this.speedX / 100;
+    this.speedY = this.speedY - this.speedY / 100;
   }
   // 小球运动开关
   Ball.prototype.switchRun = function (bool) {
@@ -162,16 +163,30 @@
     var center = this._computedCenter();
     var obj = Obj.obj
     var radius = obj.radius || 0;
-    return this._computedDistance(center.x, center.y, obj.x, obj.y) < this.radius + radius;
+    var distance = this._computedDistance(center.x, center.y, obj.x, obj.y)
+    return {
+      is: distance < this.radius + radius,
+      obj: obj
+    }
   }
   // 批量碰撞检测
   Ball.prototype._impactCheckingList = function () {
     for(var i = 0, len = this.impactObj.length; i < len; i++) {
       var obj = this.impactObj[i]
-      if (this._impactChecking(obj)) {
+      var impact = this._impactChecking(obj)
+      if (impact.is) {
         console.log('impacting')
         if (obj.bounce) {
-          this.speed *= -1
+          // 防止连续触发碰撞
+          if (!this._impactFlag) {
+            this.speedX *= impact.obj.x === undefined ? 1 : -1
+            this.speedY *= impact.obj.y === undefined ? 1 : -1
+            var _this = this
+            setTimeout(function () {
+              _this._impactFlag = false
+            }, 1000/50)
+            _this._impactFlag = true
+          }
         } else {
           obj.obj.impact()
           this._removeImpactObj(obj)
@@ -200,6 +215,7 @@
       requestAnimationFrame(step);
     })
   }
+  
   window.onload = main
   // 调整窗口大小
   var animationId
