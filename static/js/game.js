@@ -67,7 +67,8 @@
     this.runFlag = false;
     this.impactObjArr = [];
     this.objArr = [];
-    this.objNum = 10
+    this.objNum = 10;
+    this.score = 0;
     this._init();
   }
   // 小球初始化方法
@@ -102,7 +103,7 @@
     }
   }
   // 计算距离
-  Ball.prototype._computedDistance = function (x, y, objX, objY) {
+  Ball.prototype._computeDistance = function (x, y, objX, objY) {
     if (objX === undefined) return Math.abs(y - objY)
     if (objY === undefined) return Math.abs(x - objX)
     return Math.sqrt(Math.pow(objX - x, 2) + Math.pow(objY - y, 2))
@@ -114,7 +115,7 @@
       y: e.clientY - this.y,
     }
     var center = this._computedCenter();
-    var is = this._computedDistance(e.clientX, e.clientY, center.x, center.y) < this.radius;
+    var is = this._computeDistance(e.clientX, e.clientY, center.x, center.y) < this.radius;
     return {
       is: is,
       offset: offset,
@@ -148,7 +149,7 @@
       if (!mouseDownFlag) return;
       mouseDownFlag = false;
       var center = _this._computedCenter();
-      var distance = _this._computedDistance(center.x, center.y, _this.chain.x, _this.chain.y);
+      var distance = _this._computeDistance(center.x, center.y, _this.chain.x, _this.chain.y);
       if (distance) {
         var offsetX = _this.chain.x - center.x;
         var offsetY = _this.chain.y - center.y;
@@ -168,7 +169,7 @@
     }
     this.chain && this.chain.draw(this);
     this.runFlag && this._run();
-    
+    this._drawScore()
   }
   // 小球运动
   Ball.prototype._run = function () {
@@ -187,7 +188,7 @@
     var center = this._computedCenter();
     var obj = Obj.obj;
     var radius = obj.radius || 0;
-    var distance = this._computedDistance(center.x, center.y, obj.x, obj.y);
+    var distance = this._computeDistance(center.x, center.y, obj.x, obj.y);
     return {
       is: distance < this.radius + radius,
       obj: obj
@@ -203,6 +204,7 @@
         if (obj.bounce) {
           // 防止连续触发碰撞
           if (!this._impactFlag) {
+            obj.obj.type && this._computeScore(-1)
             this.speedX *= impact.obj.x === undefined ? 1 : -1;
             this.speedY *= impact.obj.y === undefined ? 1 : -1;
             var _this = this;
@@ -215,6 +217,7 @@
         } else {
           var i = this._removeImpactObj(obj);
           obj.obj.impact();
+          obj.obj.type === 0 &&　this._computeScore(1)
         }
       }
     }
@@ -236,6 +239,16 @@
       o._uid === obj._uid && (index = i);
     }
     return this.impactObjArr.splice(index, 1);
+  }
+  // 分数计算
+  Ball.prototype._computeScore = function (change) {
+    this.score += change
+  }
+  // 绘制分数
+  Ball.prototype._drawScore = function () {
+    this.context.font = '40px 微软雅黑';
+    this.context.fillStyle = '#333';
+    this.context.fillText('Score: ' + this.score, this.context.width - 200, 100)
   }
   // 场景中的球形物体构造函数
   var BallObj = function (context) {
@@ -272,6 +285,7 @@
   BallObj.prototype.impact = function (ball) {
     this.life = false;
   }
+
   // 主函数
   var main = function () {
     var context = initCanvas()
